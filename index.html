@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>古文単語アプリ</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A5568'/><text x='50' y='50' font-size='65' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white' font-family='sans-serif'>古</text></svg>">
+
+    <style>
+        /* Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+        /* 基本スタイル */
+        :root {
+            --primary-color: #3D2B1F; --secondary-color: #F3EADE; --accent-color: #C0392B; --bg-color: #FDFBF5;
+            --correct-color: #28a745; --incorrect-color: #dc3545;
+        }
+        body { font-family: 'Noto Sans JP', sans-serif; margin: 0; background-color: var(--bg-color); color: var(--primary-color); }
+
+        /* スタート画面 */
+        #start-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; background: var(--bg-color) url('https://www.transparenttextures.com/patterns/handmade-paper.png'); opacity: 1; visibility: visible; transition: opacity 0.8s ease-out, visibility 0.8s; z-index: 2000; }
+        #start-screen.fade-out { opacity: 0; visibility: hidden; }
+        .app-title h1 { font-family: 'Shippori Mincho', serif; font-size: clamp(2.5rem, 8vw, 5rem); color: var(--primary-color); margin: 0; letter-spacing: 0.1em; }
+        .app-title h1 span { display: inline-block; opacity: 0; transform: translateY(20px); animation: fadeIn-up 0.8s forwards; }
+        .mode-selection { margin-top: 50px; opacity: 0; transform: translateY(20px); animation: fadeIn-up 0.8s 1s forwards; }
+        .mode-btn { padding: 15px 40px; margin: 0 15px; font-size: 1.2rem; font-weight: 700; color: white; background-color: var(--primary-color); border: none; border-radius: 5px; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
+        @keyframes fadeIn-up { to { opacity: 1; transform: translateY(0); } }
+
+        /* メインアプリ */
+        #app-container, #game-container { display: none; opacity: 0; transition: opacity 0.8s ease-in; }
+        #app-container.fade-in, #game-container.fade-in { display: block; opacity: 1; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        header { position: relative; text-align: center; padding: 20px 0; border-bottom: 2px solid var(--secondary-color); }
+        .back-btn { position: absolute; top: 50%; left: 0; transform: translateY(-50%); background: none; border: none; color: var(--primary-color); font-size: 15px; cursor: pointer; padding: 10px; font-weight: bold; }
+        .back-btn:hover { color: var(--accent-color); }
+        h1, h2, h3 { margin: 0 0 10px 0; color: var(--primary-color); }
+        nav { display: flex; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+        nav button { padding: 10px 15px; margin: 5px; border: 2px solid var(--primary-color); background-color: white; color: var(--primary-color); font-size: 16px; cursor: pointer; border-radius: 8px; transition: all 0.3s; }
+        nav button.active { background-color: var(--primary-color); color: white; }
+        .content { display: none; }
+        .content.active { display: block; }
+        #study-time-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .time-card { background-color: #fff; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .time-card .label { font-size: 0.9em; color: #777; }
+        .time-card .time { font-size: 1.8em; font-weight: bold; color: var(--accent-color); }
+        #prone-list-container { margin-top: 20px; }
+        #prone-word-list { list-style: none; padding: 0; }
+        #prone-word-list li { background-color: #fff; padding: 10px 15px; border-bottom: 1px solid var(--secondary-color); display: flex; justify-content: space-between; align-items: center; }
+        .delete-prone-word-btn { background-color: var(--accent-color); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        #search-box { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid var(--secondary-color); border-radius: 8px; margin-bottom: 20px; }
+        #word-list { list-style: none; padding: 0; }
+        #word-list li { background-color: #fff; padding: 15px; border-bottom: 1px solid var(--secondary-color); display: flex; justify-content: space-between; align-items: center; }
+        .word-yomi { font-size: 1.2em; font-weight: bold;} .word-meaning { color: #555; }
+        #quiz-view-content { text-align: center; }
+        #quiz-container { background-color: #fff; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; margin-top: 20px; }
+        #quiz-question { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        #quiz-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .choice-btn { width: 100%; padding: 15px; font-size: 16px; background-color: #f9f9f9; border: 1px solid var(--secondary-color); border-radius: 8px; cursor: pointer; transition: background-color 0.3s; }
+        #quiz-result { font-size: 20px; font-weight: bold; padding: 10px; }
+        #next-quiz-btn, .action-btn { padding: 12px 30px; border: none; background-color: var(--primary-color); color: white; font-size: 16px; cursor: pointer; border-radius: 8px; margin-top: 10px; transition: opacity 0.3s; }
+        .progress-bar { width: 100%; height: 30px; background-color: var(--secondary-color); border-radius: 15px; overflow: hidden; margin-top: 10px; }
+        .progress-bar-inner { height: 100%; background-color: var(--accent-color); width: 0%; transition: width 0.5s; text-align: center; line-height: 30px; color: white; font-weight: bold; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background-color: white; padding: 30px; border-radius: 10px; width: 90%; max-width: 400px; text-align: center; }
+        .modal-content h3 { margin-top: 0; color: var(--primary-color); }
+        .modal-content .options-container { text-align: left; margin: 20px 0; }
+        .modal-content .options-container label { display: block; margin-bottom: 10px; font-size: 18px; }
+
+        /* ゲームモード用の追加スタイル */
+        #game-area {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+        .slot-machine {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            margin: 30px 0;
+            perspective: 1000px;
+        }
+        .slot-reel {
+            width: 200px;
+            height: 60px;
+            border: 3px solid var(--secondary-color);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            overflow: hidden;
+            background-color: #f9f9f9;
+            position: relative;
+        }
+        .slot-reel-inner {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            line-height: 60px;
+        }
+        .slot-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        #game-controls button {
+             margin: 0 10px;
+        }
+        #game-result-text {
+            font-size: 1.8em;
+            font-weight: bold;
+            margin-top: 20px;
+            height: 40px;
+        }
+        #game-result-text.correct { color: var(--correct-color); }
+        #game-result-text.incorrect { color: var(--incorrect-color); }
+
+    </style>
+</head>
+<body>
+
+    <div id="start-screen">
+        <div class="app-title"><h1>古文単語</h1></div>
+        <div class="mode-selection">
+            <button id="study-mode-btn" class="mode-btn">学習モード</button>
+            <button id="game-mode-btn" class="mode-btn">ゲームモード</button>
+        </div>
+    </div>
+
+    <div class="survey-link-container" 
+             style="position: fixed; 
+                    bottom: 15px; 
+                    right: 15px; 
+                    font-size: 0.85rem; 
+                    z-index: 2001;">
+            
+            <a href="https://forms.office.com/r/G89g3xv2KP" 
+               target="_blank" 
+               rel="noopener noreferrer" 
+               style="color: var(--primary-color); text-decoration: underline; font-weight: bold;">
+                お問い合わせ・アンケート
+            </a>
+        </div>
+
+    <div id="app-container">
+        <div id="pos-select-modal" class="modal-overlay">
+            <div class="modal-content">
+                <h3>出題する品詞を選択してください</h3>
+                <div id="pos-options" class="options-container">
+                     <label><input type="checkbox" name="pos" value="動詞" checked> 動詞</label>
+                     <label><input type="checkbox" name="pos" value="形容詞" checked> 形容詞</label>
+                     <label><input type="checkbox" name="pos" value="形容動詞" checked> 形容動詞</label>
+                     <label><input type="checkbox" name="pos" value="副詞" checked> 副詞</label>
+                </div>
+                <button id="start-quiz-btn" class="action-btn">クイズ開始</button>
+            </div>
+        </div>
+
+        <div class="container">
+            <header>
+                <button id="back-to-mode-select-btn-study" class="back-btn">‹ 戻る</button>
+                <h2>学習モード</h2>
+            </header>
+            <nav>
+                <button class="nav-btn active" data-target="list-view">単語一覧</button>
+                <button class="nav-btn" data-target="quiz-view">四択問題</button>
+                <button class="nav-btn" data-target="progress-view">学習進捗</button>
+            </nav>
+            <main>
+                <div id="list-view" class="content active"><input type="text" id="search-box" placeholder="単語を検索 (読み or 意味)"><ul id="word-list"></ul></div>
+                <div id="quiz-view" class="content">
+                    <div id="quiz-view-content">
+                        <div id="quiz-intro">
+                            <p>1回20問の四択クイズに挑戦！</p>
+                            <button id="show-pos-select-btn" class="action-btn">クイズを始める</button>
+                        </div>
+                        <div id="quiz-container">
+                            <div id="quiz-progress">問題 <span id="current-q-num">1</span> / 20</div>
+                            <div id="quiz-question"></div>
+                            <div id="quiz-choices"></div>
+                            <div id="quiz-result"></div>
+                            <button id="next-quiz-btn" class="action-btn" style="display: none;">次の問題へ</button>
+                            <button id="stop-quiz-btn" class="action-btn" style="display: none; margin-left: 10px; background-color: #888;">中断する</button>
+                        </div>
+                        <div id="quiz-final-result" style="display:none;">
+                            <h3>結果発表</h3>
+                            <p style="font-size: 1.5em;"><span id="total-q-answered">20</span>問中 <span id="final-score"></span> 問正解でした！</p>
+                            <button id="retry-quiz-btn" class="action-btn">もう一度挑戦</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="progress-view" class="content">
+                    <h2>学習記録</h2>
+                    <div id="study-time-grid">
+                        <div class="time-card"><div class="label">今日の勉強時間</div><div id="time-today" class="time">0分</div></div>
+                        <div class="time-card"><div class="label">今週の勉強時間</div><div id="time-week" class="time">0分</div></div>
+                        <div class="time-card"><div class="label">今月の勉強時間</div><div id="time-month" class="time">0分</div></div>
+                        <div class="time-card"><div class="label">累計の勉強時間</div><div id="time-total" class="time">0分</div></div>
+                    </div>
+                    
+                    <h3>習熟度</h3>
+                    <div id="progress-container">
+                        <p>総単語数: <span id="total-words"></span> / 学習済み: <span id="learned-words-count"></span></p>
+                        <div class="progress-bar"><div id="progress-bar-inner" class="progress-bar-inner"></div></div>
+                    </div>
+
+                    <div id="prone-list-container">
+                        <h3>間違えやすい単語リスト</h3>
+                        <ul id="prone-word-list">
+                            </ul>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <div id="game-container">
+         <div class="container">
+            <header>
+                <button id="back-to-mode-select-btn-game" class="back-btn">‹ 戻る</button>
+                <h2>ゲームモード</h2>
+            </header>
+            <div id="game-area">
+                <h3>スロットで単語と意味を合わせよう！</h3>
+                <div class="slot-machine">
+                    <div>
+                        <div class="slot-label">古文単語</div>
+                        <div class="slot-reel"><div id="word-slot" class="slot-reel-inner"></div></div>
+                    </div>
+                    <div>
+                        <div class="slot-label">意味</div>
+                         <div class="slot-reel"><div id="meaning-slot" class="slot-reel-inner"></div></div>
+                    </div>
+                </div>
+                <div id="game-controls">
+                    <button id="stop-word-btn" class="action-btn">単語をストップ！</button>
+                    <button id="stop-meaning-btn" class="action-btn" disabled>意味をストップ！</button>
+                </div>
+                <div id="game-result-text"></div>
+                 <button id="next-game-btn" class="action-btn" style="display: none;">次のゲームへ</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="words.js"></script>
+    <script>
+        // --- データ保存・読み込み機能 ---
+        let studyLog = [];
+        let learnedWords = [];
+        let mistakeCounts = {};
+        let proneWords = [];
+
+        function saveData() {
+            localStorage.setItem('kobun_studyLog', JSON.stringify(studyLog));
+            localStorage.setItem('kobun_learnedWords', JSON.stringify(learnedWords));
+            localStorage.setItem('kobun_mistakeCounts', JSON.stringify(mistakeCounts));
+            localStorage.setItem('kobun_proneWords', JSON.stringify(proneWords));
+        }
+
+        function loadData() {
+            studyLog = JSON.parse(localStorage.getItem('kobun_studyLog')) || [];
+            learnedWords = JSON.parse(localStorage.getItem('kobun_learnedWords')) || [];
+            mistakeCounts = JSON.parse(localStorage.getItem('kobun_mistakeCounts')) || {};
+            proneWords = JSON.parse(localStorage.getItem('kobun_proneWords')) || [];
+            allWords.forEach(word => {
+                if (learnedWords.includes(word.yomi)) {
+                    word.learned = true;
+                }
+            });
+        }
+
+        // --- 学習時間タイマー機能 ---
+        let studyTimer = null;
+        let sessionSeconds = 0;
+
+        function startStudyTimer() {
+            if (studyTimer) return;
+            studyTimer = setInterval(() => {
+                sessionSeconds++;
+            }, 1000);
+        }
+
+        function stopStudyTimer() {
+            if (!studyTimer) return;
+            clearInterval(studyTimer);
+            studyTimer = null;
+            if (sessionSeconds > 0) {
+                studyLog.push({ timestamp: Date.now(), duration: sessionSeconds });
+                sessionSeconds = 0;
+                saveData();
+                displayStudyTimes();
+            }
+        }
+        
+        window.addEventListener('beforeunload', stopStudyTimer);
+
+        // --- スタート画面の制御 ---
+        const startScreen = document.getElementById('start-screen');
+        const studyModeBtn = document.getElementById('study-mode-btn');
+        const gameModeBtn = document.getElementById('game-mode-btn');
+        const appContainer = document.getElementById('app-container');
+        const gameContainer = document.getElementById('game-container');
+        const titleEl = document.querySelector('.app-title h1');
+        titleEl.innerHTML = titleEl.textContent.split('').map((char, i) => `<span style="animation-delay: ${i * 0.1}s">${char}</span>`).join('');
+        
+        function fadeOutStartScreen(callback) {
+             startScreen.classList.add('fade-out');
+            setTimeout(callback, 800);
+        }
+
+        studyModeBtn.addEventListener('click', () => {
+            fadeOutStartScreen(() => appContainer.classList.add('fade-in'));
+        });
+        
+        gameModeBtn.addEventListener('click', () => {
+            fadeOutStartScreen(() => {
+                gameContainer.classList.add('fade-in');
+                setupSlotGame();
+            });
+        });
+        
+        // --- モード選択に戻るボタン ---
+        function backToStartScreen() {
+            appContainer.classList.remove('fade-in');
+            gameContainer.classList.remove('fade-in');
+            setTimeout(() => {
+                 startScreen.classList.remove('fade-out');
+            }, 300);
+        }
+        document.getElementById('back-to-mode-select-btn-study').addEventListener('click', backToStartScreen);
+        document.getElementById('back-to-mode-select-btn-game').addEventListener('click', backToStartScreen);
+
+
+        // ===============================================
+        //           ゲームモード (スロット)
+        // ===============================================
+        const wordSlot = document.getElementById('word-slot');
+        const meaningSlot = document.getElementById('meaning-slot');
+        const stopWordBtn = document.getElementById('stop-word-btn');
+        const stopMeaningBtn = document.getElementById('stop-meaning-btn');
+        const gameResultText = document.getElementById('game-result-text');
+        const nextGameBtn = document.getElementById('next-game-btn');
+        
+        let wordInterval, meaningInterval;
+        let selectedWord = null;
+        let meaningChoices = [];
+
+        function startSlot(element, items, key, speed) {
+            if (!items || items.length === 0) return;
+            let index = 0;
+            // スロットが空白で始まらないように、最初に表示
+            element.textContent = items[index][key];
+            index = (index + 1) % items.length;
+
+            return setInterval(() => {
+                element.textContent = items[index][key];
+                index = (index + 1) % items.length;
+            }, speed);
+        }
+        
+        function setupSlotGame() {
+            selectedWord = null;
+            meaningChoices = [];
+            gameResultText.textContent = '';
+            gameResultText.className = '';
+            
+            stopWordBtn.disabled = false;
+            stopMeaningBtn.disabled = true;
+            nextGameBtn.style.display = 'none';
+
+            // 単語スロットを開始
+            const shuffledWords = [...allWords].sort(() => 0.5 - Math.random());
+            if (wordInterval) clearInterval(wordInterval);
+            wordInterval = startSlot(wordSlot, shuffledWords, 'yomi', 120);
+
+            // 意味スロットはダミーで回しておく
+            const shuffledMeanings = [...allWords].sort(() => 0.5 - Math.random());
+            if (meaningInterval) clearInterval(meaningInterval);
+            meaningInterval = startSlot(meaningSlot, shuffledMeanings, 'meaning', 120);
+        }
+
+        stopWordBtn.addEventListener('click', () => {
+            clearInterval(wordInterval);
+            const stoppedYomi = wordSlot.textContent;
+            selectedWord = allWords.find(w => w.yomi === stoppedYomi);
+            
+            stopWordBtn.disabled = true;
+            stopMeaningBtn.disabled = false;
+
+            // 意味スロットの選択肢を作成（正解1 + 不正解4）
+            const correctAnswer = selectedWord.meaning;
+            const wrongAnswers = allWords
+                .filter(w => w.meaning !== correctAnswer)
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 4)
+                .map(w => ({ meaning: w.meaning }));
+
+            meaningChoices = [{ meaning: correctAnswer }, ...wrongAnswers].sort(() => 0.5 - Math.random());
+            
+            // 意味スロットを正しい選択肢で、より遅い速度で再開
+            clearInterval(meaningInterval);
+            meaningInterval = startSlot(meaningSlot, meaningChoices, 'meaning', 450);
+        });
+
+        stopMeaningBtn.addEventListener('click', () => {
+            clearInterval(meaningInterval);
+            const stoppedMeaning = meaningSlot.textContent;
+            
+            stopMeaningBtn.disabled = true;
+            nextGameBtn.style.display = 'inline-block';
+
+            if (stoppedMeaning === selectedWord.meaning) {
+                gameResultText.textContent = "正解！";
+                gameResultText.classList.add('correct');
+            } else {
+                gameResultText.textContent = `残念！正解は「${selectedWord.meaning}」`;
+                gameResultText.classList.add('incorrect');
+            }
+        });
+
+        nextGameBtn.addEventListener('click', setupSlotGame);
+        // スペースキーでスロット操作
+        document.addEventListener('keydown', (e) => {
+            // ゲームモードが表示されていない場合は何もしない
+            if (!gameContainer.classList.contains('fade-in')) return;
+            
+            if (e.code === 'Space') {
+                e.preventDefault(); // スペースキーのデフォルト動作（スクロール）を防止
+                
+                if (!stopWordBtn.disabled) {
+                    stopWordBtn.click();
+                } else if (!stopMeaningBtn.disabled) {
+                    stopMeaningBtn.click();
+                } else if (nextGameBtn.style.display !== 'none') {
+                    nextGameBtn.click();
+                }
+            }
+        });
+
+        // ===============================================
+        //              学習モード
+        // ===============================================
+        let currentQuizWord = null;
+        let isAnswered = false;
+        let quizWords = [];
+        let questionCount = 0;
+        let score = 0;
+        const MAX_QUESTIONS = 20;
+
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const contents = document.querySelectorAll('.content');
+        const wordList = document.getElementById('word-list');
+        const searchBox = document.getElementById('search-box');
+        const posSelectModal = document.getElementById('pos-select-modal');
+        const startQuizBtn = document.getElementById('start-quiz-btn');
+        const showPosSelectBtn = document.getElementById('show-pos-select-btn');
+        const quizContainer = document.getElementById('quiz-container');
+        const quizQuestion = document.getElementById('quiz-question');
+        const quizChoices = document.getElementById('quiz-choices');
+        const quizResult = document.getElementById('quiz-result');
+        const nextQuizBtn = document.getElementById('next-quiz-btn');
+        const stopQuizBtn = document.getElementById('stop-quiz-btn');
+        const currentQNumEl = document.getElementById('current-q-num');
+        const quizIntro = document.getElementById('quiz-intro');
+        const quizFinalResult = document.getElementById('quiz-final-result');
+        const finalScoreEl = document.getElementById('final-score');
+        const totalQAnsweredEl = document.getElementById('total-q-answered');
+        const retryQuizBtn = document.getElementById('retry-quiz-btn');
+        const proneWordListEl = document.getElementById('prone-word-list');
+
+        function updateProgressView() {
+            const totalWordsEl = document.getElementById('total-words');
+            const learnedWordsCountEl = document.getElementById('learned-words-count');
+            const progressBarInnerEl = document.getElementById('progress-bar-inner');
+
+            const totalWordsCount = allWords.length;
+            const learnedCount = learnedWords.length;
+            
+            totalWordsEl.textContent = totalWordsCount;
+            learnedWordsCountEl.textContent = learnedCount;
+
+            const progressPercentage = totalWordsCount > 0 ? (learnedCount / totalWordsCount) * 100 : 0;
+            
+            progressBarInnerEl.style.width = `${progressPercentage}%`;
+            progressBarInnerEl.textContent = `${Math.round(progressPercentage)}%`;
+        }
+
+        function updateProneWordsList() {
+            proneWordListEl.innerHTML = '';
+            if (proneWords.length === 0) {
+                proneWordListEl.innerHTML = '<li>まだありません</li>';
+                return;
+            }
+            proneWords.forEach(yomi => {
+                const word = allWords.find(w => w.yomi === yomi);
+                if (word) {
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${word.yomi} - ${word.meaning}</span><button class="delete-prone-word-btn" data-yomi="${word.yomi}">削除</button>`;
+                    proneWordListEl.appendChild(li);
+                }
+            });
+        }
+
+        proneWordListEl.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-prone-word-btn')) {
+                const yomiToRemove = e.target.dataset.yomi;
+                proneWords = proneWords.filter(yomi => yomi !== yomiToRemove);
+                saveData();
+                updateProneWordsList();
+            }
+        });
+
+        function displayWords(wordsToDisplay) {
+            wordList.innerHTML = '';
+            wordsToDisplay.forEach(word => {
+                const li = document.createElement('li');
+                li.innerHTML = `<div><div class="word-yomi">${word.yomi}</div><div class="word-meaning">${word.meaning}</div></div> <span style="font-size:0.8em; color: #888;">${word.pos}</span>`;
+                wordList.appendChild(li);
+            });
+        }
+        
+        searchBox.addEventListener('input', () => {
+            const searchTerm = searchBox.value.toLowerCase();
+            const filteredWords = allWords.filter(word => 
+                word.yomi.toLowerCase().includes(searchTerm) || 
+                word.meaning.toLowerCase().includes(searchTerm)
+            );
+            displayWords(filteredWords);
+        });
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                contents.forEach(content => content.classList.remove('active'));
+                button.classList.add('active');
+                document.getElementById(button.dataset.target).classList.add('active');
+            });
+        });
+
+        showPosSelectBtn.addEventListener('click', () => {
+            posSelectModal.style.display = 'flex';
+        });
+
+        posSelectModal.addEventListener('click', (e) => {
+            if (e.target === posSelectModal) {
+                posSelectModal.style.display = 'none';
+            }
+        });
+
+        startQuizBtn.addEventListener('click', () => {
+            const selectedPos = Array.from(document.querySelectorAll('#pos-options input:checked')).map(cb => cb.value);
+            if (selectedPos.length === 0) {
+                alert('品詞を1つ以上選択してください。');
+                return;
+            }
+            
+            quizWords = allWords.filter(word => selectedPos.includes(word.pos));
+            if (quizWords.length < 4) {
+                 alert('問題を作成するには、少なくとも4つの単語が必要です。品詞を追加してください。');
+                return;
+            }
+            
+            posSelectModal.style.display = 'none';
+            quizIntro.style.display = 'none';
+            quizFinalResult.style.display = 'none';
+            quizContainer.style.display = 'block';
+            stopQuizBtn.style.display = 'inline-block';
+            
+            questionCount = 0;
+            score = 0;
+            generateQuiz();
+        });
+        
+        retryQuizBtn.addEventListener('click', () => {
+            quizFinalResult.style.display = 'none';
+            quizIntro.style.display = 'block';
+        });
+
+        function generateQuiz() {
+            if (questionCount >= MAX_QUESTIONS) {
+                showFinalResult();
+                return;
+            }
+            isAnswered = false;
+            questionCount++;
+            currentQNumEl.textContent = questionCount;
+            
+            currentQuizWord = quizWords[Math.floor(Math.random() * quizWords.length)];
+            const wrongChoices = quizWords.filter(w => w.yomi !== currentQuizWord.yomi)
+                                          .sort(() => 0.5 - Math.random())
+                                          .slice(0, 3);
+            
+            const choices = [currentQuizWord, ...wrongChoices].sort(() => 0.5 - Math.random());
+            
+            quizQuestion.textContent = currentQuizWord.yomi;
+            quizChoices.innerHTML = '';
+            choices.forEach(choice => {
+                const button = document.createElement('button');
+                button.textContent = choice.meaning;
+                button.className = 'choice-btn';
+                button.addEventListener('click', () => checkAnswer(choice.meaning, button));
+                quizChoices.appendChild(button);
+            });
+            
+            quizResult.textContent = '';
+            quizResult.className = '';
+            nextQuizBtn.style.display = 'none';
+        }
+        
+        function checkAnswer(selectedMeaning, button) {
+            if (isAnswered) return;
+            isAnswered = true;
+            
+            Array.from(quizChoices.children).forEach(btn => btn.disabled = true);
+            
+            if (selectedMeaning === currentQuizWord.meaning) {
+                quizResult.textContent = '正解！';
+                quizResult.style.color = 'var(--correct-color)';
+                button.style.backgroundColor = 'var(--correct-color)';
+                button.style.color = 'white';
+                score++;
+                if (!learnedWords.includes(currentQuizWord.yomi)) {
+                    learnedWords.push(currentQuizWord.yomi);
+                    saveData();
+                    updateProgressView();
+                }
+            } else {
+                quizResult.textContent = `不正解... 正解は「${currentQuizWord.meaning}」`;
+                quizResult.style.color = 'var(--incorrect-color)';
+                button.style.backgroundColor = 'var(--incorrect-color)';
+                button.style.color = 'white';
+                if (!proneWords.includes(currentQuizWord.yomi)) {
+                    proneWords.push(currentQuizWord.yomi);
+                    saveData();
+                    updateProneWordsList();
+                }
+            }
+            
+            nextQuizBtn.style.display = 'inline-block';
+        }
+
+        nextQuizBtn.addEventListener('click', generateQuiz);
+        
+        stopQuizBtn.addEventListener('click', showFinalResult);
+
+        function showFinalResult() {
+            quizContainer.style.display = 'none';
+            quizFinalResult.style.display = 'block';
+            stopQuizBtn.style.display = 'none';
+            finalScoreEl.textContent = score;
+            totalQAnsweredEl.textContent = questionCount;
+        }
+
+        function displayStudyTimes() {
+             const now = new Date();
+             const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+             const weekStart = new Date(now.setDate(now.getDate() - now.getDay())).getTime();
+             const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+             let timeToday = 0, timeWeek = 0, timeMonth = 0, timeTotal = 0;
+
+             studyLog.forEach(log => {
+                 timeTotal += log.duration;
+                 if(log.timestamp >= todayStart) timeToday += log.duration;
+                 if(log.timestamp >= weekStart) timeWeek += log.duration;
+                 if(log.timestamp >= monthStart) timeMonth += log.duration;
+             });
+
+             document.getElementById('time-today').textContent = `${Math.floor(timeToday / 60)}分`;
+             document.getElementById('time-week').textContent = `${Math.floor(timeWeek / 60)}分`;
+             document.getElementById('time-month').textContent = `${Math.floor(timeMonth / 60)}分`;
+             document.getElementById('time-total').textContent = `${Math.floor(timeTotal / 60)}分`;
+        }
+
+        // --- 初期化処理 ---
+        function initializeApp() {
+            // allWordsが定義されているか最終チェック
+            if (typeof allWords === 'undefined') {
+                console.error("単語データ(allWords)の読み込みに失敗しました。words.jsが正しく読み込まれているか確認してください。");
+                alert("単語データの読み込みに失敗しました。ページを再読み込みしてください。");
+                return;
+            }
+            loadData();
+            displayWords(allWords);
+            displayStudyTimes();
+            updateProgressView();
+            updateProneWordsList();
+            startStudyTimer();
+        }
+
+        // DOMContentLoadedではなく、すべてのリソース（words.jsを含む）が読み込まれた後に
+        // アプリケーションを初期化するためにwindow.onloadを使用します。
+        // これにより、allWords is not definedエラーを防ぎます。
+        window.onload = initializeApp;
+
+    </script>
+</body>
+</html>
+
