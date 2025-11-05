@@ -601,6 +601,7 @@
         });
 
         
+    
     function generateQuiz() {
             if (questionCount >= MAX_QUESTIONS) {
                 showFinalResult();
@@ -627,11 +628,10 @@
                 quizChoices.appendChild(button);
             });
 
-            quizQuestion.textContent = currentQuizWord.yomi;
             quizResult.textContent = '';
             quizResult.className = '';
             nextQuizBtn.style.display = 'none';
-        
+        }
 
         function checkAnswer(selectedMeaning, button) {
             if (isAnswered) return;
@@ -664,6 +664,7 @@
             
             nextQuizBtn.style.display = 'inline-block';
         }
+        
         nextQuizBtn.addEventListener('click', generateQuiz);
         
         stopQuizBtn.addEventListener('click', showFinalResult);
