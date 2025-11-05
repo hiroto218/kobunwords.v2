@@ -51,7 +51,7 @@
         #search-box { width: 100%; padding: 10px; font-size: 16px; box-sizing: border-box; border: 1px solid var(--secondary-color); border-radius: 8px; margin-bottom: 20px; }
         #word-list { list-style: none; padding: 0; }
         #word-list li { background-color: #fff; padding: 15px; border-bottom: 1px solid var(--secondary-color); display: flex; justify-content: space-between; align-items: center; }
-        .word-yomi { font-size: 1.2em; font-weight: bold;} .word-meaning { color: #555; }
+        .word-yomi { font-size: 1.3em; font-weight: bold;} .word-meaning { color: #070707; }
         #quiz-view-content { text-align: center; }
         #quiz-container { background-color: #fff; padding: 30px; border-radius: 8px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); display: none; margin-top: 20px; }
         #quiz-question { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
@@ -66,6 +66,12 @@
         .modal-content h3 { margin-top: 0; color: var(--primary-color); }
         .modal-content .options-container { text-align: left; margin: 20px 0; }
         .modal-content .options-container label { display: block; margin-bottom: 10px; font-size: 18px; }
+        #word-list li { background-color: #fff; padding: 15px; border-bottom: 1px solid var(--secondary-color); display: flex; justify-content: space-between; align-items: center; }
+        .word-kanji { font-size: 0.98em; font-weight: 800; color:#C0392B; margin-bottom: 3px; }
+        .word-yomi { font-size: 1.3em; font-weight: bold; margin-bottom: 3px; }
+        .word-meaning { color: #555; font-size: 0.95em; }
+        .word-info { flex: 1; }
+        .word-pos { font-size: 0.85em; color: #888; white-space: nowrap; margin-left: 15px; }
 
         /* ゲームモード用の追加スタイル */
         #game-area {
@@ -518,14 +524,24 @@
             }
         });
 
-        function displayWords(wordsToDisplay) {
-            wordList.innerHTML = '';
-            wordsToDisplay.forEach(word => {
-                const li = document.createElement('li');
-                li.innerHTML = `<div><div class="word-yomi">${word.yomi}</div><div class="word-meaning">${word.meaning}</div></div> <span style="font-size:0.8em; color: #888;">${word.pos}</span>`;
-                wordList.appendChild(li);
-            });
-        }
+       function displayWords(wordsToDisplay) {
+    wordList.innerHTML = '';
+    wordsToDisplay.forEach(word => {
+        const li = document.createElement('li');
+        const kanjiDisplay = word.kanji || word.yomi;
+        li.innerHTML = `
+            <div class="word-info">
+                <div style="display: flex; align-items: baseline; gap: 16px; margin-bottom: 3px;">
+                    <div class="word-yomi">${word.yomi}</div>
+                    <div class="word-kanji">${kanjiDisplay}</div>
+                </div>
+                <div class="word-meaning">${word.meaning}</div>
+            </div>
+            <div class="word-pos">${word.pos}</div>
+        `;
+        wordList.appendChild(li);
+    });
+}
         
         searchBox.addEventListener('input', () => {
             const searchTerm = searchBox.value.toLowerCase();
@@ -584,7 +600,8 @@
             quizIntro.style.display = 'block';
         });
 
-        function generateQuiz() {
+        
+    function generateQuiz() {
             if (questionCount >= MAX_QUESTIONS) {
                 showFinalResult();
                 return;
@@ -613,8 +630,20 @@
             quizResult.textContent = '';
             quizResult.className = '';
             nextQuizBtn.style.display = 'none';
+
+            // 漢字表記を問題として表示
+    const kanjiDisplay = currentQuizWord.kanji || currentQuizWord.yomi;
+    quizQuestion.textContent = kanjiDisplay;
         }
+    
+    
+    
+    
+    quizResult.textContent = '';
+    quizResult.className = '';
+    nextQuizBtn.style.display = 'none';
         
+
         function checkAnswer(selectedMeaning, button) {
             if (isAnswered) return;
             isAnswered = true;
@@ -646,7 +675,6 @@
             
             nextQuizBtn.style.display = 'inline-block';
         }
-
         nextQuizBtn.addEventListener('click', generateQuiz);
         
         stopQuizBtn.addEventListener('click', showFinalResult);
