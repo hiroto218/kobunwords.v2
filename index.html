@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>古文単語アプリ</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%234A5568'/><text x='50' y='50' font-size='65' font-weight='bold' text-anchor='middle' dominant-baseline='central' fill='white' font-family='sans-serif'>古</text></svg>">
-<style>
+
+    <style>
         /* Google Fonts */
         @import url('https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@700&family=Noto+Sans+JP:wght@400;700&display=swap');
 
@@ -632,7 +633,7 @@
 
             // 漢字表記を問題として表示
     const kanjiDisplay = currentQuizWord.kanji || currentQuizWord.yomi;
-    quizQuestion.textContent = currentQuizWord.yomi;
+    quizQuestion.textContent = kanjiDisplay;
         }
     
     
