@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -24,10 +23,9 @@
         .app-title h1 { font-family: 'Shippori Mincho', serif; font-size: clamp(2.5rem, 8vw, 5rem); color: var(--primary-color); margin: 0; letter-spacing: 0.1em; }
         .app-title h1 span { display: inline-block; opacity: 0; transform: translateY(20px); animation: fadeIn-up 0.8s forwards; }
         .mode-selection { margin-top: 50px; opacity: 0; transform: translateY(20px); animation: fadeIn-up 0.8s 1s forwards; }
-        .mode-btn { padding: 17px 20px; font-size: clamp(0.85rem, 3.5vw, 1.2rem); font-weight: 700; color: white; background-color: var(--primary-color); border: none; border-radius: 5px; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .mode-btn { padding: 15px 40px; margin: 0 15px; font-size: 1.2rem; font-weight: 700; color: white; background-color: var(--primary-color); border: none; border-radius: 5px; cursor: pointer; transition: transform 0.3s ease, box-shadow 0.3s ease; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .mode-btn:hover { transform: scale(1.05); box-shadow: 0 6px 15px rgba(0,0,0,0.2); }
         @keyframes fadeIn-up { to { opacity: 1; transform: translateY(0); } }
-
 
         /* メインアプリ */
         #app-container, #game-container { display: none; opacity: 0; transition: opacity 0.8s ease-in; }
@@ -129,23 +127,6 @@
         #game-result-text.correct { color: var(--correct-color); }
         #game-result-text.incorrect { color: var(--incorrect-color); }
 
-        /* スマホ用の追加調整 */
-@media (max-width: 600px) {
-    .slot-machine {
-        flex-direction: column;
-    }
-    .slot-reel {
-        width: 100%;
-        max-width: 300px;
-    }
-    #quiz-choices {
-        grid-template-columns: 1fr;
-    }
-    nav button {
-        flex: 1;
-        min-width: 100px;
-    }
-}
     </style>
 </head>
 <body>
